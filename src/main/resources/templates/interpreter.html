@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapiddweller Interpreter</title>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        form {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid rgb(128, 128, 128);
+            cursor: pointer;
+        }
+
+        #loadingMessage {
+            display: none;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+<form id="codeForm">
+    <h1>Java Interpreter</h1>
+    <label for="code">Enter code:</label>
+    <textarea id="code" name="code" rows="10" cols="60"></textarea><br>
+    <p id="loadingMessage">Processing...</p>
+    <p id="resultMessage"></p>
+    <div style="display: flex; justify-content: space-between">
+        <div>
+            <button id="clearContextBtn" type="button" onclick="submitCode(ACTIONS.CLEAR_CONTEXT)">Clear context
+            </button>
+            <button id="addContextBtn" type="button" onclick="submitCode(ACTIONS.ADD_CONTEXT)">Add code to context
+            </button>
+        </div>
+        <button style="margin-left: 5px" id="executeBtn" type="button" onclick="submitCode(ACTIONS.EXECUTE)">
+            Execute
+        </button>
+    </div>
+
+</form>
+
+<script>
+    const ACTIONS = {
+        EXECUTE: {
+            apiEndpoint: '/api/interpreter',
+            btnId: 'executeBtn',
+            successMessage: '<span style="color: green">Result: </span>',
+        },
+        ADD_CONTEXT: {
+            apiEndpoint: '/api/interpreter-context',
+            btnId: 'addContextBtn',
+            successMessage: '<span style="color: green">Add code to context successfully</span>',
+        },
+        CLEAR_CONTEXT: {
+            apiEndpoint: '/api/interpreter-context',
+            btnId: 'clearContextBtn',
+            successMessage: '<span style="color: green">Clear context successfully</span>',
+        }
+    }
+
+    async function submitCode(type) {
+        const text = document.getElementById("code").value;
+        if (!text || text.trim().length === 0) {
+            alert('Please input text');
+            return;
+        }
+        const btn = document.getElementById(type['btnId']);
+        try {
+            document.getElementById("loadingMessage").style.display = 'block';
+            btn.disabled = true;
+            const response = await fetch(type['apiEndpoint'], {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({input: text, clear: type === ACTIONS.CLEAR_CONTEXT})
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById("resultMessage").innerHTML = type === ACTIONS.EXECUTE ? type['successMessage'] + data.data :
+                    type['successMessage'];
+            } else {
+                document.getElementById("resultMessage").innerHTML = '<span style="color: red">Error: </span>' + data.message;
+            }
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+            document.getElementById("resultMessage").innerHTML = '<span style="color: red">Error: </span>' + 'Something went wrong.';
+        } finally {
+            btn.disabled = false;
+            document.getElementById("loadingMessage").style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapiddweller Translator</title>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        form {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid rgb(128, 128, 128);
+            cursor: pointer;
+        }
+
+        #loadingMessage {
+            display: none;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+<form id="codeForm">
+    <h1>English - German Translator</h1>
+    <label for="text">Enter English text:</label>
+    <textarea id="text" name="text" rows="8" cols="40"></textarea><br>
+    <p id="loadingMessage">Processing...</p>
+    <p><b>German: </b><span id="resultMessage"></span></p>
+    <p id="error"></p>
+    <button type="button" onclick="submitCode()" id="submitButton">Translate</button>
+</form>
+
+<script>
+    async function submitCode() {
+        const text = document.getElementById("text").value;
+        if (!text || text.trim().length === 0) {
+            alert('Please input text');
+            return;
+        }
+        const submitButton = document.getElementById("submitButton");
+
+        try {
+            document.getElementById("loadingMessage").style.display = 'block';
+            submitButton.disabled = true;
+            const response = await fetch('/api/translator', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ input: text })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById("resultMessage").innerText = data.data;
+                document.getElementById("error").innerHTML = "";
+            } else {
+                document.getElementById("error").innerHTML = '<span style="color: red">Error: </span>' + 'Something went wrong.';
+            }
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+            document.getElementById("error").innerHTML = '<span style="color: red">Error: </span>' + 'Something went wrong.';
+            document.getElementById("resultMessage").innerText = '';
+        } finally {
+            submitButton.disabled = false;
+            document.getElementById("loadingMessage").style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
